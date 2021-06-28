@@ -5,80 +5,10 @@ use crossterm::{QueueableCommand, cursor};
 use rand::Rng;
 use rand::{seq::IteratorRandom, thread_rng};
 
-trait AsChar {
-    fn as_char(&self) -> &'static str;
-}
+mod matrix;
+use matrix::{Point, Matrix};
 
-#[derive(Copy, Clone)]
-enum Point {
-    Blank,
-    Path,
-    Wall,
-}
-
-impl AsChar for Point {
-    fn as_char(&self) -> &'static str {
-        match self {
-            Point::Blank => " ",
-            Point::Path =>  ".",
-            Point::Wall => "X",
-        }
-    }    
-}
-
-struct Matrix {
-    vals: Vec<Vec<Point>>,
-}
-
-impl Matrix {
-
-    fn new(rows: usize, cols: usize) -> Matrix {
-        let mut vec = Vec::new();
-        for _ in 0..rows {
-            vec.push(vec![Point::Blank; cols]);
-        }
-        Matrix{vals: vec}
-    }
-
-    fn shape(&self) -> (usize, usize) {
-        let rows = self.vals.len();
-        if rows == 0 {
-            (0, 0)
-        } else {
-            let cols = self.vals[0].len();
-            (rows, cols)
-        }
-    }
-
-    fn at(&self, row: usize, col: usize) -> Point {
-        self.vals[row][col]
-    }
-
-    fn set(&mut self, row: usize, col: usize, val: Point) {
-        self.vals[row][col] = val
-    }
-
-    fn render(&self, stdout: &mut Stdout) {
-        for row in &self.vals {
-            let mut s = String::from("");
-            for col in row {
-                s.push_str(col.as_char());
-            }
-            s.push_str("\n");
-            stdout.write(s.as_bytes()).ok();
-        }
-    }
-
-    fn add_row(&mut self) {
-        let (_, cols) =  self.shape();
-        println!("{}", cols);
-
-        self.vals.push(vec![Point::Blank; cols]);
-    }
-
-}
-
-fn generate_path(rows: usize, cols: usize, starting_col: usize) -> Matrix {
+fn generate_path(rows: usize, cols: usize, starting_col: usize) -> Matrix<Point> {
     let mut stdout = stdout();
 
     let mut m = Matrix::new(rows, cols);
@@ -100,7 +30,7 @@ fn generate_path(rows: usize, cols: usize, starting_col: usize) -> Matrix {
 
 }
 
-fn fill_next_point(m: &mut Matrix, cur_row: usize, cur_col: usize, rng: &mut ThreadRng) -> (usize, usize) {
+fn fill_next_point(m: &mut Matrix<Point>, cur_row: usize, cur_col: usize, rng: &mut ThreadRng) -> (usize, usize) {
 
     let (cur_row, cur_col) = (cur_row as i32, cur_col as i32);
 
@@ -130,7 +60,7 @@ fn fill_next_point(m: &mut Matrix, cur_row: usize, cur_col: usize, rng: &mut Thr
 
 }
 
-fn is_valid_point(m: &Matrix, point: (i32, i32)) -> bool {
+fn is_valid_point(m: &Matrix<Point>, point: (i32, i32)) -> bool {
     let (total_rows, total_cols) = m.shape();
     let (total_rows, total_cols) = (total_rows as i32, total_cols as i32);
 
